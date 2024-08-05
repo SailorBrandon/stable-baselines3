@@ -176,8 +176,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
-                actions, values, log_probs = self.policy(obs_tensor)
+                actions, values, log_probs, slackness = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
+            slackness = slackness.cpu().numpy()
 
             # Rescale and perform action
             clipped_actions = actions
@@ -192,7 +193,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     # as we are sampling from an unbounded Gaussian distribution
                     clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
 
-            new_obs, rewards, dones, infos = env.step(clipped_actions)
+            new_obs, rewards, dones, infos = env.step((clipped_actions, slackness))
 
             self.num_timesteps += env.num_envs
 

@@ -119,7 +119,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def step_async(self, actions: np.ndarray) -> None:
+    def step_async(self, actions_slackness_pair: tuple[np.ndarray, np.ndarray]) -> None:
         """
         Tell all the environments to start taking a step
         with the given actions.
@@ -195,14 +195,14 @@ class VecEnv(ABC):
         """
         raise NotImplementedError()
 
-    def step(self, actions: np.ndarray) -> VecEnvStepReturn:
+    def step(self, actions_slackness_pair: tuple[np.ndarray, np.ndarray]) -> VecEnvStepReturn:
         """
         Step the environments with the given action
 
         :param actions: the action
         :return: observation, reward, done, information
         """
-        self.step_async(actions)
+        self.step_async(actions_slackness_pair)
         return self.step_wait()
 
     def get_images(self) -> Sequence[Optional[np.ndarray]]:

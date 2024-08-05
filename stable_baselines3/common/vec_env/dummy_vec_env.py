@@ -25,6 +25,7 @@ class DummyVecEnv(VecEnv):
     """
 
     actions: np.ndarray
+    slackness: np.ndarray
 
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [_patch_env(fn()) for fn in env_fns]
@@ -49,14 +50,14 @@ class DummyVecEnv(VecEnv):
         self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
         self.metadata = env.metadata
 
-    def step_async(self, actions: np.ndarray) -> None:
-        self.actions = actions
+    def step_async(self, actions_slackness_pair: tuple[np.ndarray, np.ndarray]) -> None:
+        self.actions, self.slackness = actions_slackness_pair
 
     def step_wait(self) -> VecEnvStepReturn:
         # Avoid circular imports
         for env_idx in range(self.num_envs):
             obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
-                self.actions[env_idx]
+                (self.actions[env_idx], self.slackness[env_idx])
             )
             # convert to SB3 VecEnv api
             self.buf_dones[env_idx] = terminated or truncated
