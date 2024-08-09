@@ -365,10 +365,11 @@ class BasePolicy(BaseModel, ABC):
         obs_tensor, vectorized_env = self.obs_to_tensor(observation)
 
         with th.no_grad():
-            actions = self._predict(obs_tensor, deterministic=deterministic)
+            actions, slackness = self._predict(obs_tensor, deterministic=deterministic)
         # Convert to numpy, and reshape to the original action shape
         actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))  # type: ignore[misc, assignment]
-
+        slackness = slackness.cpu().numpy() # TODO(Shaohang)
+        
         if isinstance(self.action_space, spaces.Box):
             if self.squash_output:
                 # Rescale to proper domain when using squashing
@@ -383,7 +384,7 @@ class BasePolicy(BaseModel, ABC):
             assert isinstance(actions, np.ndarray)
             actions = actions.squeeze(axis=0)
 
-        return actions, state  # type: ignore[return-value]
+        return actions, state, slackness  # type: ignore[return-value]
 
     def scale_action(self, action: np.ndarray) -> np.ndarray:
         """

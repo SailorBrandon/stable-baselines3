@@ -387,7 +387,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # we assume that the policy uses tanh to scale the action
             # We use non-deterministic action in the case of SAC, for TD3, it does not matter
             assert self._last_obs is not None, "self._last_obs was not set"
-            unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
+            unscaled_action, _, slackness = self.predict(self._last_obs, deterministic=False)
 
         # Rescale the action from [low, high] to [-1, 1]
         if isinstance(self.action_space, spaces.Box):
@@ -404,7 +404,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Discrete case, no need to normalize or clip
             buffer_action = unscaled_action
             action = buffer_action
-        return action, buffer_action
+        return action, buffer_action, slackness
 
     def _dump_logs(self) -> None:
         """
@@ -554,10 +554,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.actor.reset_noise(env.num_envs)
 
             # Select action randomly or according to policy
-            actions, buffer_actions = self._sample_action(learning_starts, action_noise, env.num_envs)
+            actions, buffer_actions, slackness = self._sample_action(learning_starts, action_noise, env.num_envs)
 
             # Rescale and perform action
-            new_obs, rewards, dones, infos = env.step(actions)
+            new_obs, rewards, dones, infos = env.step((actions, slackness))
 
             self.num_timesteps += env.num_envs
             num_collected_steps += 1
